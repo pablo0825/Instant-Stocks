@@ -8,3 +8,8 @@ export interface StockItem {
   l: string; //當日最低價
   askPrice?: number; //預計購買價格
 }
+
+export interface AppState {
+  loading: boolean;
+  stock: Map<string, StockItem>;
+}
