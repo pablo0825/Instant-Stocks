@@ -6,6 +6,7 @@ export interface StockItem {
   o: string; //開盤價
   h: string; //當日最高價
   l: string; //當日最低價
+  y: string; //昨收價
   askPrice?: number; //預計購買價格
 }
 

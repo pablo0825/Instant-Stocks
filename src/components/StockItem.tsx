@@ -1,14 +1,26 @@
 import { useState } from "react";
 import { useGlobalContext } from "../context/Context";
 import { BiCaretDown } from "react-icons/bi";
+import RemoveBtn from "./RemoveBtn";
+import EditBtn from "./EditBtn";
+import EditInput from "./EditInput";
 
 const StockItem = () => {
-  const { stock, addToList, remove } = useGlobalContext();
+  const { stock } = useGlobalContext();
   const [editItem, setEditItem] = useState<string | null>(null);
   const [editAskPrice, setEditAskPrice] = useState<number | undefined>();
-  const [changeItem, setChangeItem] = useState<Set<string>>(new Set());
+  const [changeItem, setChangeItem] = useState<string | null>(null);
+
+  /*   const [changeItem, setChangeItem] = useState<Set<string>>(new Set()); //唯一值，不能重複
+   */
 
   const toggleExpand = (code: string) => {
+    setChangeItem((prev) => (prev === code ? null : code));
+    setEditItem("");
+  };
+
+  /* 允許多打開 */
+  /*   const toggleExpand = (code: string) => {
     setChangeItem((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(code)) {
@@ -19,48 +31,43 @@ const StockItem = () => {
       return newSet;
     });
   };
-
-  const handleSubmitEdit = (code: string) => {
-    if (editAskPrice === undefined || isNaN(editAskPrice)) {
-      alert("請輸入有效價格");
-      return;
+ */
+  const handlePriceColor = (currentPrice: string, referencePrice: string) => {
+    if (currentPrice > referencePrice) {
+      return "red";
+    } else if (currentPrice < referencePrice) {
+      return "#32C759";
+    } else {
+      return "black";
     }
-
-    const existingItem = stock.get(code);
-    if (!existingItem) return;
-
-    const updatedItem = {
-      ...existingItem,
-      askPrice: editAskPrice,
-    };
-
-    addToList(updatedItem);
-    setEditAskPrice(undefined);
-    setEditItem(null);
   };
 
   return (
     <>
       {Array.from(stock.entries()).map(([code, item]) => {
-        const isExpanded = changeItem.has(code);
+        /*  const isExpanded = changeItem.has(code); */
+        const isExpanded = changeItem === code;
         return (
           <div
             key={code}
-            className="bg-[#F5F5F5] p-4 flex flex-col rounded-lg space-y-4 overflow-hidden transition-all duration-300 ease-in-out"
-            style={{ height: isExpanded ? "12.76rem" : "5rem" }}
+            className="bg-[#F5F5F5] py-2 px-3 min-w-xs flex flex-col rounded-lg space-y-2 overflow-hidden transition-all duration-300 ease-in-out"
+            style={{ height: isExpanded ? "9.6rem" : "4rem" }}
           >
             {/* 主要資訊 */}
             <div className="flex flex-1 gap-4 items-center">
               <div className="flex flex-col flex-1">
                 <strong className="text-xl">{item.c}</strong>
-                <strong className="text-sm">{item.n}</strong>
+                <strong className="text-sm text-neutral-400">{item.n}</strong>
               </div>
-              <p className="flex text-4xl font-bold">
+              <p
+                className="flex text-4xl font-bold"
+                style={{ color: handlePriceColor(item.z, item.y) }}
+              >
                 {isNaN(Number(item.z)) ? "_" : Number(item.z).toFixed(2)}
               </p>
               <button
                 onClick={() => toggleExpand(code)}
-                className="flex items-center justify-center w-[2rem] h-[2rem] bg-[#D9D9D9] rounded-full"
+                className="flex items-center justify-center w-[2rem] h-[2rem] bg-[#D9D9D9] rounded-full hover:bg-[#cbcbcb]"
               >
                 <BiCaretDown
                   className={`text-white text-xl transition-transform duration-500 ease-in-out ${
@@ -69,69 +76,40 @@ const StockItem = () => {
                 />
               </button>
             </div>
-
+            {/* 分隔線 */}
             <div className="border-t-2"></div>
-
             {/* 次要資訊 */}
             <div>
+              {/* 次要-第一層 */}
               <div className="flex justify-between mb-4">
-                <p>
-                  開盤價：
-                  {isNaN(Number(item.o)) ? "_" : Number(item.o).toFixed(2)}
+                <p className="text-sm">
+                  昨收價：
+                  {isNaN(Number(item.y)) ? "_" : Number(item.y).toFixed(2)}
                 </p>
-                <p>
-                  最高價：
-                  {isNaN(Number(item.h)) ? "_" : Number(item.h).toFixed(2)}
-                </p>
-                <p>
-                  最低價：
+                <p className="text-sm">
+                  當日最低價：
                   {isNaN(Number(item.l)) ? "_" : Number(item.l).toFixed(2)}
                 </p>
               </div>
-
+              {/* 次要-第二層 */}
               <div className="flex flex-row items-center">
-                <div className="flex-1 flex">
-                  {editItem === code ? (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSubmitEdit(code);
-                      }}
-                    >
-                      <input
-                        type="number"
-                        value={editAskPrice ?? ""}
-                        onChange={(e) =>
-                          setEditAskPrice(Number(e.target.value))
-                        }
-                      />
-                      <button type="submit">送出</button>
-                    </form>
-                  ) : (
-                    <p className="text-xl font-bold">
-                      心動價：
-                      {item.askPrice != null && !isNaN(item.askPrice)
-                        ? item.askPrice.toFixed(2)
-                        : "_"}
-                    </p>
-                  )}
-                </div>
-                <div className="space-x-4">
-                  <button
-                    onClick={() => {
-                      setEditItem(code);
-                      setEditAskPrice(item.askPrice ?? undefined);
-                    }}
-                    className="py-1 px-4 bg-[#D9D9D9] rounded-2xl"
-                  >
-                    修改
-                  </button>
-                  <button
-                    onClick={() => remove(code)}
-                    className="py-1 px-4 bg-[#FD90A3] rounded-2xl"
-                  >
-                    刪除
-                  </button>
+                <EditInput
+                  code={code}
+                  item={item}
+                  editItem={editItem}
+                  editAskPrice={editAskPrice}
+                  setEditItem={setEditItem}
+                  setEditAskPrice={setEditAskPrice}
+                />
+                <div className="space-x-2">
+                  <EditBtn
+                    code={code}
+                    item={item}
+                    editItem={editItem}
+                    setEditItem={setEditItem}
+                    setEditAskPrice={setEditAskPrice}
+                  />
+                  <RemoveBtn code={code} />
                 </div>
               </div>
             </div>
